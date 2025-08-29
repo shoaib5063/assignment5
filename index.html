@@ -178,3 +178,277 @@
     a,button{ font-family:inherit; }
   </style>
 </head>
+<body>
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="nav-wrap">
+      <div class="brand">
+        <img src="assets/logo.png" alt="Logo">
+        <div>
+          <div style="font-size:15px; line-height:1;">Emergency Service</div>
+          <div style="font-size:12px; opacity:.9;">Directory</div>
+        </div>
+      </div>
+      <div class="metrics">
+        <div class="metric" title="Favourites">
+          <img src="assets/heart.png" alt="heart">
+          <span>Hearts</span>
+          <span class="count" id="heartCount">0</span>
+        </div>
+        <div class="metric" title="Coins">
+          <img src="assets/coin.png" alt="coin">
+          <span>Coins</span>
+          <span class="count" id="coinCount">100</span>
+        </div>
+        <div class="metric" title="Copy Count">
+          <span>Copies</span>
+          <span class="count" id="copyCount">0</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-wrap">
+      <img class="crest" src="assets/logo-dark.png" alt="Gov Crest">
+      <h1>Emergency Service Directory</h1>
+      <p class="slogan">Government Emergency Services at Your Fingertips — A Project by Government of the People’s Republic of Bangladesh</p>
+    </div>
+  </section>
+
+  <!-- Main -->
+  <main class="main">
+    <!-- Cards -->
+    <section class="cards" id="cardGrid">
+      <!-- Cards will be injected by JS -->
+    </section>
+
+    <!-- History -->
+    <aside class="history">
+      <div class="history-head">
+        <div class="history-title">Call History</div>
+        <button id="clearHistory" class="history-clear">Clear</button>
+      </div>
+      <ul id="historyList" class="history-list">
+        <!-- dynamic -->
+      </ul>
+    </aside>
+  </main>
+
+  <script>
+    // ------- State -------
+    const state = {
+      hearts: 0,
+      coins: 100,
+      copies: 0,
+      history: []
+    };
+
+    const services = [
+      {
+        id:'national-999',
+        nameEn:'National Emergency Number',
+        nameBn:'জাতীয় জরুরি সেবা',
+        number:'999',
+        category:'All',
+        icon:'assets/emergency.png'
+      },
+      {
+        id:'police-999',
+        nameEn:'Police Helpline Number',
+        nameBn:'পুলিশ',
+        number:'999',
+        category:'Police',
+        icon:'assets/police.png'
+      },
+      {
+        id:'fire-999',
+        nameEn:'Fire Service Number',
+        nameBn:'ফায়ার সার্ভিস',
+        number:'999',
+        category:'Fire',
+        icon:'assets/fire-service.png'
+      },
+      {
+        id:'ambulance-1994',
+        nameEn:'Ambulance Service',
+        nameBn:'অ্যাম্বুলেন্স',
+        number:'1994-999999',
+        category:'Health',
+        icon:'assets/ambulance.png'
+      },
+      {
+        id:'women-109',
+        nameEn:'Women & Child Helpline',
+        nameBn:'নারী ও শিশু সুরক্ষা',
+        number:'109',
+        category:'Govt.',
+        icon:'assets/heart.png'
+      },
+      {
+        id:'anti-106',
+        nameEn:'Anti-Corruption Helpline',
+        nameBn:'দুর্নীতি দমন',
+        number:'106',
+        category:'Govt.',
+        icon:'assets/logo.png'
+      },
+      {
+        id:'electricity-16216',
+        nameEn:'Electricity Helpline',
+        nameBn:'বিদ্যুৎ বিচ্ছিন্ন',
+        number:'16216',
+        category:'Electricity',
+        icon:'assets/energy.png' // fallback if not present
+      },
+      {
+        id:'brac-16445',
+        nameEn:'Brac Helpline',
+        nameBn:'ব্র্যাক',
+        number:'16445',
+        category:'NGO',
+        icon:'assets/brac.png'
+      },
+      {
+        id:'rail-163',
+        nameEn:'Bangladesh Railway Helpline',
+        nameBn:'বাংলাদেশ রেলওয়ে',
+        number:'163',
+        category:'Railway',
+        icon:'assets/Bangladesh-Railway.png'
+      }
+    ];
+
+    // ------- Helpers -------
+    const el = sel => document.querySelector(sel);
+    const fmtTime = d => {
+      // e.g., "11:36:58 AM"
+      return d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    };
+
+    const updateNavbar = () => {
+      el('#heartCount').textContent = state.hearts;
+      el('#coinCount').textContent = state.coins;
+      el('#copyCount').textContent = state.copies;
+    };
+
+    const renderCards = () => {
+      const grid = el('#cardGrid');
+      grid.innerHTML = services.map(s => `
+        <article class="card" data-id="${s.id}" data-number="${s.number}" data-name="${s.nameEn}">
+          <button class="heart-btn" title="Give a heart" data-action="heart">
+            <img src="assets/heart.png" alt="heart">
+            <span class="sr-only">Give heart</span>
+          </button>
+
+          <div class="card-top">
+            <span class="badge">${s.category}</span>
+          </div>
+
+          <div class="service">
+            <img src="${s.icon}" alt="${s.nameEn} icon" onerror="this.src='assets/emergency.png'">
+            <div class="names">
+              <div class="name-en">${s.nameEn}</div>
+              <div class="name-bn">${s.nameBn}</div>
+            </div>
+          </div>
+
+          <div class="hotline">${s.number}</div>
+
+          <div class="actions">
+            <button class="btn copy" data-action="copy">Copy</button>
+            <button class="btn call" data-action="call">Call</button>
+          </div>
+        </article>
+      `).join('');
+    };
+
+    const renderHistory = () => {
+      const list = el('#historyList');
+      if(state.history.length === 0){
+        list.innerHTML = '<li class="entry"><span class="service-name" style="opacity:.6;">No calls yet.</span><small></small></li>';
+        return;
+      }
+      list.innerHTML = state.history.map(h => `
+        <li class="entry">
+          <div>
+            <div class="service-name">${h.name}</div>
+            <small>${h.number}</small>
+          </div>
+          <small>${h.time}</small>
+        </li>
+      `).join('');
+    };
+
+    // ------- Actions -------
+    const handleHeart = () => { state.hearts++; updateNavbar(); };
+    const handleCopy = (name, number) => {
+      // Clipboard copy with safe fallback
+      const tryModern = async () => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(number);
+          return true;
+        }
+        return false;
+      };
+
+      const legacyCopy = (text) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try{ document.execCommand('copy'); }catch(e){}
+        document.body.removeChild(ta);
+      };
+
+      tryModern().then(ok => {
+        if(!ok) legacyCopy(number);
+        alert(`📋 Copied ${name} number: ${number}`);
+        state.copies++; updateNavbar();
+      });
+    };
+
+    const handleCall = (name, number) => {
+      if(state.coins < 20){
+        alert('Not enough coins to make this call. You need at least 20 coins.');
+        return;
+      }
+      state.coins -= 20;
+      updateNavbar();
+      alert(`📞 Calling ${name} (${number}) ...`);
+      const time = fmtTime(new Date());
+      state.history.unshift({name, number, time});
+      renderHistory();
+    };
+
+    // Event Delegation for cards
+    document.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if(!card) return;
+
+      const actionBtn = e.target.closest('[data-action]');
+      if(!actionBtn) return;
+
+      const name = card.getAttribute('data-name');
+      const number = card.getAttribute('data-number');
+      const action = actionBtn.getAttribute('data-action');
+
+      if(action === 'heart'){ handleHeart(); }
+      if(action === 'copy'){ handleCopy(name, number); }
+      if(action === 'call'){ handleCall(name, number); }
+    });
+
+    // Clear history
+    el('#clearHistory').addEventListener('click', () => {
+      state.history = [];
+      renderHistory();
+    });
+
+    // Init
+    renderCards();
+    renderHistory();
+    updateNavbar();
+  </script>
+</body>
+</html>
