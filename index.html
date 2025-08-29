@@ -439,11 +439,7 @@
       if(action === 'call'){ handleCall(name, number); }
     });
 
-    // Clear history
-    el('#clearHistory').addEventListener('click', () => {
-      state.history = [];
-      renderHistory();
-    });
+
 
     // Init
     renderCards();
